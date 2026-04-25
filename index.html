@@ -16,37 +16,37 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-10 px-4 text-slate-800">
+<body class="min-h-screen flex flex-col items-center py-4 px-3 sm:py-10 sm:px-4 text-slate-800">
 
     <div class="max-w-3xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden border border-slate-200">
         
         <!-- Header -->
-        <div class="bg-red-800 text-white p-6 text-center">
-            <h1 class="text-3xl font-bold tracking-widest" style="font-family: 'Noto Serif TC', serif;">專屬印章產生器</h1>
+        <div class="bg-red-800 text-white p-4 sm:p-6 text-center">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-widest" style="font-family: 'Noto Serif TC', serif;">專屬印章產生器</h1>
             <p class="text-red-200 mt-2 text-sm">客製化您的數位落款</p>
         </div>
 
-        <div class="flex flex-col md:flex-row p-6 gap-8">
+        <div class="flex flex-col md:flex-row p-4 sm:p-6 gap-6 sm:gap-8">
             
             <!-- Canvas Preview Area -->
             <div class="flex-1 flex flex-col items-center justify-center space-y-4">
-                <div class="canvas-container bg-white p-8 rounded-xl relative">
+                <div class="canvas-container bg-white p-4 sm:p-8 rounded-xl relative w-full max-w-[300px] aspect-square flex items-center justify-center mx-auto">
                     <!-- 裝飾用角標 -->
                     <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-red-800/30 m-2"></div>
                     <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-red-800/30 m-2"></div>
                     <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-red-800/30 m-2"></div>
                     <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-red-800/30 m-2"></div>
                     
-                    <canvas id="sealCanvas" width="300" height="300" class="max-w-full h-auto drop-shadow-md cursor-pointer" title="點擊即可下載印章"></canvas>
+                    <canvas id="sealCanvas" class="w-full h-full object-contain drop-shadow-md cursor-pointer" title="點擊即可下載印章"></canvas>
                 </div>
-                <button onclick="downloadSeal()" class="px-6 py-2 bg-red-700 hover:bg-red-800 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                <button onclick="downloadSeal()" class="w-full max-w-[300px] justify-center px-6 py-3 bg-red-700 hover:bg-red-800 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     下載印章圖片
                 </button>
             </div>
 
             <!-- Controls -->
-            <div class="flex-1 space-y-5 bg-slate-50 p-6 rounded-xl border border-slate-100">
+            <div class="flex-1 space-y-5 bg-slate-50 p-5 sm:p-6 rounded-xl border border-slate-100">
                 
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">印章文字</label>
@@ -136,24 +136,35 @@
             drawSeal();
         }
 
-        function drawSeal() {
+        async function drawSeal() {
             const canvas = document.getElementById('sealCanvas');
             const ctx = canvas.getContext('2d');
+            
+            // --- 響應式與高畫質 (Retina/High-DPI) 處理 ---
+            const displaySize = 300; // 基礎邏輯尺寸
+            const dpr = window.devicePixelRatio || 1;
+            
+            // 根據設備像素密度放大 Canvas 實際像素，確保手機上極度清晰
+            canvas.width = displaySize * dpr;
+            canvas.height = displaySize * dpr;
+            // 縮放繪圖上下文，後續的繪圖邏輯都不用改數字
+            ctx.scale(dpr, dpr);
+
             let rawText = document.getElementById('sealText').value.trim() || '王文君';
             const autoAddYin = document.getElementById('autoAddYin').checked;
             const fontStyle = document.getElementById('fontStyle').value;
             const shape = document.getElementById('sealShape').value;
             const isYin = (currentStyle === 'yin');
 
-            // 設定繪圖參數
-            const size = canvas.width;
+            // 設定繪圖參數 (基於 displaySize)
+            const size = displaySize;
             const margin = 12;
             const contentSize = size - margin * 2;
             const bgColor = isYin ? sealColor : 'transparent';
             const fgColor = isYin ? 'white' : sealColor;
             
             // 清除畫布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, size, size);
 
             // 準備文字陣列
             let chars = Array.from(rawText).slice(0, 4); // 最多取4個字
@@ -201,6 +212,13 @@
                 fontFamily = '"Long Cang", "Zhi Mang Xing", "Ma Shan Zheng", cursive'; // Google開源手寫毛筆字
             } else {
                 fontFamily = '"Noto Serif TC", "PMingLiU", "MingLiU", serif';
+            }
+
+            // 【關鍵更新】：強制等待瀏覽器將該字體載入完成後，再繼續往下畫
+            try {
+                await document.fonts.load(`bold 16px ${fontFamily}`);
+            } catch (e) {
+                console.warn('字體載入可能會有延遲', e);
             }
 
             // 計算文字排版
