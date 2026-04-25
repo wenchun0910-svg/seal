@@ -66,7 +66,9 @@
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">字體風格</label>
                     <select id="fontStyle" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" onchange="drawSeal()">
-                        <option value="cursive" selected>行書 / 楷書 (系統預設書法字)</option>
+                        <option value="seal" selected>篆書 (傳統印章字體)</option>
+                        <option value="lishu">隸書 (端莊穩重)</option>
+                        <option value="cursive">行書 / 楷書 (系統預設書法字)</option>
                         <option value="serif">宋體 / 明體 (經典印刷字)</option>
                         <option value="weibei">魏碑體 (蒼勁有力)</option>
                         <option value="iansui">芫荽體 / 硬筆 (溫潤手寫)</option>
@@ -202,7 +204,11 @@
 
             // 設定字體 (依賴系統的備援字體與 Web Fonts)
             let fontFamily = '';
-            if (fontStyle === 'cursive') {
+            if (fontStyle === 'seal') {
+                fontFamily = '"DFZhuangB", "FZXiaoZhuanTi-S13T", "FZSmallZhuan-M13S", "HanWangZhuan", "LiSu", "PMingLiU", serif'; // 呼叫系統內建的篆體或隸書備援
+            } else if (fontStyle === 'lishu') {
+                fontFamily = '"LiSu", "STLiti", "FzLiShu-Z01S", "PMingLiU", serif'; // 隸書字體備援
+            } else if (fontStyle === 'cursive') {
                 fontFamily = '"STXingkai", "Xingkai SC", "DFKai-sb", "BiauKai", "Kaiti TC", "KaiTi", cursive';
             } else if (fontStyle === 'weibei') {
                 fontFamily = '"Weibei TC", "Weibei SC", "STWeibei", serif';
