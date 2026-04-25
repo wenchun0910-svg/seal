@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人專屬印章產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Serif+TC:wght@700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7f6f2; /* 宣紙般的底色 */
+            background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.05"/%3E%3C/svg%3E');
+        }
+        .canvas-container {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4 text-slate-800">
+
+    <div class="max-w-3xl w-full bg-white/90 backdrop-blur rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        
+        <!-- Header -->
+        <div class="bg-red-800 text-white p-6 text-center">
+            <h1 class="text-3xl font-bold tracking-widest" style="font-family: 'Noto Serif TC', serif;">專屬印章產生器</h1>
+            <p class="text-red-200 mt-2 text-sm">客製化您的數位落款</p>
+        </div>
+
+        <div class="flex flex-col md:flex-row p-6 gap-8">
+            
+            <!-- Canvas Preview Area -->
+            <div class="flex-1 flex flex-col items-center justify-center space-y-4">
+                <div class="canvas-container bg-white p-8 rounded-xl relative">
+                    <!-- 裝飾用角標 -->
+                    <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-red-800/30 m-2"></div>
+                    <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-red-800/30 m-2"></div>
+                    <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-red-800/30 m-2"></div>
+                    <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-red-800/30 m-2"></div>
+                    
+                    <canvas id="sealCanvas" width="300" height="300" class="max-w-full h-auto drop-shadow-md cursor-pointer" title="點擊即可下載印章"></canvas>
+                </div>
+                <button onclick="downloadSeal()" class="px-6 py-2 bg-red-700 hover:bg-red-800 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    下載印章圖片
+                </button>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex-1 space-y-5 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">印章文字</label>
+                    <input type="text" id="sealText" value="王文君" maxlength="4" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" oninput="drawSeal()">
+                    <p class="text-xs text-slate-500 mt-1">建議輸入 2 至 4 個中文字</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">自動補齊「印」字 (四字排版)</label>
+                    <label class="relative inline-flex items-center cursor-pointer mt-1">
+                        <input type="checkbox" id="autoAddYin" class="sr-only peer" checked onchange="drawSeal()">
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-700"></div>
+                        <span class="ml-3 text-sm text-slate-600">啟用 (推薦)</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">字體風格</label>
+                    <select id="fontStyle" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" onchange="drawSeal()">
+                        <option value="cursive" selected>行書 / 楷書 (系統預設書法字)</option>
+                        <option value="serif">宋體 / 明體 (經典印刷字)</option>
+                        <option value="weibei">魏碑體 (蒼勁有力)</option>
+                        <option value="iansui">芫荽體 / 硬筆 (溫潤手寫)</option>
+                        <option value="handwriting">手寫行草 (奔放自由)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">印刻方式</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btnYang" onclick="setStyle('yang')" class="py-2 border-2 border-red-700 bg-red-50 text-red-800 rounded-lg font-medium transition-all">陽刻 (白底紅字)</button>
+                        <button id="btnYin" onclick="setStyle('yin')" class="py-2 border border-slate-300 bg-white text-slate-600 rounded-lg font-medium transition-all hover:bg-slate-50">陰刻 (紅底白字)</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">印章形狀</label>
+                    <select id="sealShape" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" onchange="drawSeal()">
+                        <option value="square">正方形</option>
+                        <option value="rounded" selected>圓角方形</option>
+                        <option value="circle">圓形</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">印泥顏色</label>
+                    <div class="flex gap-2">
+                        <button onclick="setColor('#c41a16')" class="w-8 h-8 rounded-full bg-[#c41a16] ring-2 ring-offset-1 ring-slate-300 hover:ring-[#c41a16] transition-all"></button>
+                        <button onclick="setColor('#990000')" class="w-8 h-8 rounded-full bg-[#990000] ring-2 ring-offset-1 ring-slate-300 hover:ring-[#990000] transition-all"></button>
+                        <button onclick="setColor('#e34234')" class="w-8 h-8 rounded-full bg-[#e34234] ring-2 ring-offset-1 ring-slate-300 hover:ring-[#e34234] transition-all"></button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數狀態
+        let currentStyle = 'yang'; // 'yang' 陽刻(白底紅字), 'yin' 陰刻(紅底白字)
+        let sealColor = '#c41a16'; // 經典印泥朱紅色
+
+        // 頁面載入後繪製初始印章
+        window.onload = () => {
+            // 確保網頁字體載入後再繪製
+            document.fonts.ready.then(() => {
+                drawSeal();
+            });
+            // 點擊Canvas也能下載
+            document.getElementById('sealCanvas').addEventListener('click', downloadSeal);
+        };
+
+        function setStyle(style) {
+            currentStyle = style;
+            if (style === 'yang') {
+                document.getElementById('btnYang').className = "py-2 border-2 border-red-700 bg-red-50 text-red-800 rounded-lg font-medium transition-all";
+                document.getElementById('btnYin').className = "py-2 border border-slate-300 bg-white text-slate-600 rounded-lg font-medium transition-all hover:bg-slate-50";
+            } else {
+                document.getElementById('btnYin').className = "py-2 border-2 border-red-700 bg-red-50 text-red-800 rounded-lg font-medium transition-all";
+                document.getElementById('btnYang').className = "py-2 border border-slate-300 bg-white text-slate-600 rounded-lg font-medium transition-all hover:bg-slate-50";
+            }
+            drawSeal();
+        }
+
+        function setColor(color) {
+            sealColor = color;
+            drawSeal();
+        }
+
+        function drawSeal() {
+            const canvas = document.getElementById('sealCanvas');
+            const ctx = canvas.getContext('2d');
+            let rawText = document.getElementById('sealText').value.trim() || '王文君';
+            const autoAddYin = document.getElementById('autoAddYin').checked;
+            const fontStyle = document.getElementById('fontStyle').value;
+            const shape = document.getElementById('sealShape').value;
+            const isYin = (currentStyle === 'yin');
+
+            // 設定繪圖參數
+            const size = canvas.width;
+            const margin = 12;
+            const contentSize = size - margin * 2;
+            const bgColor = isYin ? sealColor : 'transparent';
+            const fgColor = isYin ? 'white' : sealColor;
+            
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 準備文字陣列
+            let chars = Array.from(rawText).slice(0, 4); // 最多取4個字
+            
+            if (autoAddYin) {
+                if (chars.length === 1) chars.push('氏', '之', '印');
+                else if (chars.length === 2) chars.push('之', '印');
+                else if (chars.length === 3) chars.push('印');
+            }
+
+            // --- 繪製外框與背景 ---
+            ctx.lineWidth = margin; // 邊框厚度
+            ctx.strokeStyle = sealColor;
+            ctx.fillStyle = bgColor;
+
+            ctx.beginPath();
+            if (shape === 'circle') {
+                ctx.arc(size/2, size/2, contentSize/2, 0, Math.PI * 2);
+            } else {
+                const radius = (shape === 'rounded') ? 24 : 0;
+                ctx.roundRect(margin, margin, contentSize, contentSize, radius);
+            }
+            
+            if (isYin) {
+                ctx.fill(); // 陰刻填滿背景
+            } else {
+                // 陽刻白底（透明底），但畫粗邊框
+                ctx.stroke();
+            }
+
+            // --- 繪製文字 ---
+            ctx.fillStyle = fgColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 設定字體 (依賴系統的備援字體與 Web Fonts)
+            let fontFamily = '';
+            if (fontStyle === 'cursive') {
+                fontFamily = '"STXingkai", "Xingkai SC", "DFKai-sb", "BiauKai", "Kaiti TC", "KaiTi", cursive';
+            } else if (fontStyle === 'weibei') {
+                fontFamily = '"Weibei TC", "Weibei SC", "STWeibei", serif';
+            } else if (fontStyle === 'iansui') {
+                fontFamily = '"Iansui", "Klee One", sans-serif'; // 若無芫荽體，以源頭 Klee One 替代
+            } else if (fontStyle === 'handwriting') {
+                fontFamily = '"Long Cang", "Zhi Mang Xing", "Ma Shan Zheng", cursive'; // Google開源手寫毛筆字
+            } else {
+                fontFamily = '"Noto Serif TC", "PMingLiU", "MingLiU", serif';
+            }
+
+            // 計算文字排版
+            if (chars.length === 1) {
+                ctx.font = `bold ${contentSize * 0.7}px ${fontFamily}`;
+                ctx.fillText(chars[0], size/2, size/2 + 5);
+                
+            } else if (chars.length === 2) {
+                // 右至左排
+                ctx.font = `bold ${contentSize * 0.6}px ${fontFamily}`;
+                ctx.fillText(chars[0], size * 0.7, size/2 + 5);
+                ctx.fillText(chars[1], size * 0.3, size/2 + 5);
+
+            } else if (chars.length === 3 && !autoAddYin) {
+                // 3字特殊排版：右側上下兩字，左側一字置中
+                ctx.font = `bold ${contentSize * 0.45}px ${fontFamily}`;
+                ctx.fillText(chars[0], size * 0.7, size * 0.3 + 5);
+                ctx.fillText(chars[1], size * 0.7, size * 0.7 + 5);
+                
+                // 左側的字稍微大一點以平衡視覺
+                ctx.font = `bold ${contentSize * 0.5}px ${fontFamily}`;
+                ctx.fillText(chars[2], size * 0.3, size * 0.5 + 5);
+
+            } else {
+                // 4字標準排版：右上下、左上下
+                ctx.font = `bold ${contentSize * 0.45}px ${fontFamily}`;
+                // 右上 (第一個字)
+                ctx.fillText(chars[0] || '', size * 0.7, size * 0.3 + 5);
+                // 右下 (第二個字)
+                ctx.fillText(chars[1] || '', size * 0.7, size * 0.7 + 5);
+                // 左上 (第三個字)
+                ctx.fillText(chars[2] || '', size * 0.3, size * 0.3 + 5);
+                // 左下 (第四個字)
+                ctx.fillText(chars[3] || '', size * 0.3, size * 0.7 + 5);
+            }
+
+            // 加入些微的斑駁感 (侵蝕邊緣) 以模擬真實印章
+            addWeatheringEffect(ctx, size, isYin, bgColor);
+        }
+
+        // 簡單的斑駁效果產生器
+        function addWeatheringEffect(ctx, size, isYin, bgColor) {
+            // 只在有背景色或紅色框線處做些微擦除或覆蓋
+            const effectColor = isYin ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.9)';
+            ctx.fillStyle = effectColor;
+            
+            // 隨機產生幾個小白點/切角來模擬刻印的不完美
+            for(let i=0; i<30; i++) {
+                let x = Math.random() * size;
+                let y = Math.random() * size;
+                let r = Math.random() * 2;
+                
+                // 傾向在邊緣產生斑駁
+                if (x < 30 || x > size-30 || y < 30 || y > size-30) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // 下載印章圖片
+        function downloadSeal() {
+            const canvas = document.getElementById('sealCanvas');
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = '王文君印章.png';
+            link.href = url;
+            link.click();
+        }
+    </script>
+</body>
+</html>
